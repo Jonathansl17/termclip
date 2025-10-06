@@ -1,0 +1,36 @@
+#This is the bash configuration file for my custom scripts
+export PATH="$HOME/bin:$PATH"
+
+#Copy a file to clipboard from terminal
+c() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: c file1 file2 ..."
+        return 1
+    fi
+
+    # Kill previous c.py processes
+    pkill -f "$HOME/bin/c.py" 2>/dev/null
+
+    # Launch new
+    "$HOME/bin/c.py" "$@" >/dev/null 2>&1 & disown
+
+    echo "Files copied to clipboard:"
+    for f in "$@"; do
+        echo "   $f"
+    done
+}
+
+# Paste a file from the clipboard into the current directory
+v() {
+    output=$("$HOME/bin/v.py" "$@")
+    if [ $? -ne 0 ]; then
+        echo "No files found in clipboard."
+        return 1
+    fi
+
+    echo "Files pasted from clipboard:"
+    for f in $output; do
+        echo "   $f"
+    done
+}
+

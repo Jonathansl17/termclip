@@ -39,48 +39,60 @@ fi
 mkdir -p "$BIN_DIR"
 echo "Directory $BIN_DIR ready."
 
-# --- Step 2: Copy scripts and create runnable aliases ---
+# --- Step 2: Stop any previous instances so updates take effect ---
+pkill -f "$BIN_DIR/c.py"  2>/dev/null || true
+pkill -f "$BIN_DIR/cc.py" 2>/dev/null || true
+
+# --- Step 3: Copy scripts and create runnable aliases ---
 cp -f c.py "$BIN_DIR/"
 cp -f v.py "$BIN_DIR/"
-chmod u+x "$BIN_DIR/c.py" "$BIN_DIR/v.py"
+cp -f cc.py "$BIN_DIR/"
+chmod u+x "$BIN_DIR/c.py" "$BIN_DIR/v.py" "$BIN_DIR/cc.py"
 
 ln -sf "$BIN_DIR/c.py" "$BIN_DIR/c"
 ln -sf "$BIN_DIR/v.py" "$BIN_DIR/v"
-chmod u+x "$BIN_DIR/c" "$BIN_DIR/v"
+ln -sf "$BIN_DIR/cc.py" "$BIN_DIR/cc"
+chmod u+x "$BIN_DIR/c" "$BIN_DIR/v" "$BIN_DIR/cc"
 
-echo "Scripts installed and commands 'c' and 'v' ready."
+echo "Scripts installed/updated. Commands 'c', 'cc' and 'v' ready."
 
-# --- Step 3: Add shell configuration ---
-if ! grep -Fq "$MARK_START" "$BASHRC"; then
-  {
-    echo ""
-    echo "$MARK_START"
-    echo "# Terminal clipboard utilities (c, v)"
-    echo "# Added automatically on $(date)"
-    if ! grep -Fq 'export PATH="$HOME/bin:$PATH"' "$BASHRC"; then
-      echo 'export PATH="$HOME/bin:$PATH"'
-    fi
-    if [ -f "$CONFIG_FILE" ]; then
-      cat "$CONFIG_FILE"
-    else
-      cat <<'EOF'
-# termclip fallback functions
-c() { command -v c >/dev/null 2>&1 && c "$@" || "$HOME/bin/c" "$@"; }
-v() { command -v v >/dev/null 2>&1 && v "$@" || "$HOME/bin/v"; }
-EOF
-    fi
-    echo "$MARK_END"
-  } >> "$BASHRC"
-  echo "termclip configuration added to $BASHRC."
-else
-  echo "termclip configuration already exists in $BASHRC. Skipping."
+# --- Step 4: Add or refresh shell configuration ---
+if grep -Fq "$MARK_START" "$BASHRC"; then
+  # Remove the existing termclip block so we can replace it with the latest version
+  sed -i "/$MARK_START/,/$MARK_END/d" "$BASHRC"
+  # Drop the trailing blank line left behind, if any
+  sed -i -e :a -e '/^$/{$d;N;ba' -e '}' "$BASHRC"
+  echo "Existing termclip configuration removed from $BASHRC (will be refreshed)."
 fi
+
+{
+  echo ""
+  echo "$MARK_START"
+  echo "# Terminal clipboard utilities (c, v, cc)"
+  echo "# Added automatically on $(date)"
+  if ! grep -Fq 'export PATH="$HOME/bin:$PATH"' "$BASHRC"; then
+    echo 'export PATH="$HOME/bin:$PATH"'
+  fi
+  if [ -f "$CONFIG_FILE" ]; then
+    cat "$CONFIG_FILE"
+  else
+    cat <<'EOF'
+# termclip fallback functions
+c()  { command -v c  >/dev/null 2>&1 && c  "$@" || "$HOME/bin/c"  "$@"; }
+v()  { command -v v  >/dev/null 2>&1 && v  "$@" || "$HOME/bin/v";      }
+cc() { command -v cc >/dev/null 2>&1 && cc "$@" || "$HOME/bin/cc" "$@"; }
+EOF
+  fi
+  echo "$MARK_END"
+} >> "$BASHRC"
+echo "termclip configuration written to $BASHRC."
 
 # --- Final message ---
 echo ""
 echo "termclip installation complete!"
 echo "You can now use the following commands:"
 echo "  c file1 file2 ...   → Copy files or folders to the clipboard"
+echo "  cc file             → Copy the text content of a file to the clipboard"
 echo "  v                   → Paste files from the clipboard"
 echo ""
 echo "Open a new terminal or run: source ~/.bashrc"

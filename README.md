@@ -9,6 +9,7 @@ It lets you **copy and paste files or folders** from the command line — just l
 ## 🚀 Features
 
 - 🧩 Copy files or folders to the system clipboard (`c`)
+- 📝 Copy the text content of a file to the clipboard (`cc`)
 - 📎 Paste files from the clipboard into the current directory (`v`)
 - 🐧 100% compatible with GNOME / Nautilus
 - 💻 Works entirely from the terminal (no GUI required)
@@ -26,15 +27,52 @@ cd termclip
 ```
 ### Run the installer
 ```bash
-./install_termclip.sh 
-or bash install_termclip.sh
-
+./instalation.sh
+# or: bash instalation.sh
 ```
 
-### Example usage
+Running the installer again also works as an **update**: it refreshes the
+scripts in `~/bin`, stops any running instances and rewrites the termclip
+block in your `~/.bashrc`.
+
+---
+
+## 🧪 Usage
+
+### `c` — copy files/folders to the clipboard
+Copies one or more files/folders to the system clipboard **as files**,
+just like hitting *Copy* in Nautilus.
+
 ```bash
-# Copy a file to the clipboard
 c hello.txt
-# Paste the file from the clipboard to the current directory
+c file1.txt file2.png some-folder/
+```
+
+Paste them with `v` in another directory, or with `Ctrl+V` inside Nautilus.
+
+### `cc` — copy the text content of a file to the clipboard
+Reads a file as UTF-8 text and puts its **content** in the clipboard.
+Trailing whitespace and newlines are stripped, so pasting into a shell
+does not auto-execute the command.
+
+```bash
+cc comando.txt
+```
+
+Paste it with **`Ctrl+V`** in any editor, browser or text field, or with
+**`Ctrl+Shift+V`** inside a terminal.
+
+> `cc` is different from `c`: `c` copies the *file itself*, `cc` copies
+> the *text inside the file*.
+
+### `v` — paste files from the clipboard
+Pastes files previously copied with `c` (or from Nautilus) into the
+current directory. If a file with the same name already exists, a unique
+name is generated (`file_copy.txt`, `file_copy2.txt`, ...).
+
+```bash
 v
 ```
+
+`v` only works with files in the clipboard — it will not paste plain
+text copied with `cc`.

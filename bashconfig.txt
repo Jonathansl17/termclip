@@ -20,6 +20,23 @@ c() {
     done
 }
 
+# Copy the text content of a file to the clipboard
+cc() {
+    if [ $# -lt 1 ]; then
+        echo "Usage: cc file"
+        return 1
+    fi
+
+    # Kill previous cc.py processes
+    pkill -f "$HOME/bin/cc.py" 2>/dev/null
+
+    # Launch new
+    "$HOME/bin/cc.py" "$1" >/dev/null 2>&1 & disown
+
+    echo "Content copied to clipboard from:"
+    echo "   $1"
+}
+
 # Paste a file from the clipboard into the current directory
 v() {
     output=$("$HOME/bin/v.py" "$@")

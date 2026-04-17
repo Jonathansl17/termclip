@@ -40,21 +40,24 @@ mkdir -p "$BIN_DIR"
 echo "Directory $BIN_DIR ready."
 
 # --- Step 2: Stop any previous instances so updates take effect ---
-pkill -f "$BIN_DIR/c.py"  2>/dev/null || true
-pkill -f "$BIN_DIR/cc.py" 2>/dev/null || true
+pkill -f "$BIN_DIR/c.py"    2>/dev/null || true
+pkill -f "$BIN_DIR/cc.py"   2>/dev/null || true
+pkill -f "$BIN_DIR/cpwd.py" 2>/dev/null || true
 
 # --- Step 3: Copy scripts and create runnable aliases ---
 cp -f c.py "$BIN_DIR/"
 cp -f v.py "$BIN_DIR/"
 cp -f cc.py "$BIN_DIR/"
-chmod u+x "$BIN_DIR/c.py" "$BIN_DIR/v.py" "$BIN_DIR/cc.py"
+cp -f cpwd.py "$BIN_DIR/"
+chmod u+x "$BIN_DIR/c.py" "$BIN_DIR/v.py" "$BIN_DIR/cc.py" "$BIN_DIR/cpwd.py"
 
 ln -sf "$BIN_DIR/c.py" "$BIN_DIR/c"
 ln -sf "$BIN_DIR/v.py" "$BIN_DIR/v"
 ln -sf "$BIN_DIR/cc.py" "$BIN_DIR/cc"
-chmod u+x "$BIN_DIR/c" "$BIN_DIR/v" "$BIN_DIR/cc"
+ln -sf "$BIN_DIR/cpwd.py" "$BIN_DIR/cpwd"
+chmod u+x "$BIN_DIR/c" "$BIN_DIR/v" "$BIN_DIR/cc" "$BIN_DIR/cpwd"
 
-echo "Scripts installed/updated. Commands 'c', 'cc' and 'v' ready."
+echo "Scripts installed/updated. Commands 'c', 'cc', 'cpwd' and 'v' ready."
 
 # --- Step 4: Add or refresh shell configuration ---
 if grep -Fq "$MARK_START" "$BASHRC"; then
@@ -78,9 +81,10 @@ fi
   else
     cat <<'EOF'
 # termclip fallback functions
-c()  { command -v c  >/dev/null 2>&1 && c  "$@" || "$HOME/bin/c"  "$@"; }
-v()  { command -v v  >/dev/null 2>&1 && v  "$@" || "$HOME/bin/v";      }
-cc() { command -v cc >/dev/null 2>&1 && cc "$@" || "$HOME/bin/cc" "$@"; }
+c()    { command -v c    >/dev/null 2>&1 && c    "$@" || "$HOME/bin/c"    "$@"; }
+v()    { command -v v    >/dev/null 2>&1 && v    "$@" || "$HOME/bin/v";         }
+cc()   { command -v cc   >/dev/null 2>&1 && cc   "$@" || "$HOME/bin/cc"   "$@"; }
+cpwd() { command -v cpwd >/dev/null 2>&1 && cpwd "$@" || "$HOME/bin/cpwd" "$@"; }
 EOF
   fi
   echo "$MARK_END"
@@ -93,6 +97,7 @@ echo "termclip installation complete!"
 echo "You can now use the following commands:"
 echo "  c file1 file2 ...   → Copy files or folders to the clipboard"
 echo "  cc file             → Copy the text content of a file to the clipboard"
+echo "  cpwd [path]         → Copy the current (or given) path to the clipboard"
 echo "  v                   → Paste files from the clipboard"
 echo ""
 echo "Open a new terminal or run: source ~/.bashrc"

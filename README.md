@@ -10,6 +10,7 @@ It lets you **copy and paste files or folders** from the command line — just l
 
 - 🧩 Copy files or folders to the system clipboard (`c`)
 - 📝 Copy the text content of a file to the clipboard (`cc`)
+- 📍 Copy the current working directory path to the clipboard (`cpwd`)
 - 📎 Paste files from the clipboard into the current directory (`v`)
 - 🐧 100% compatible with GNOME / Nautilus
 - 💻 Works entirely from the terminal (no GUI required)
@@ -64,6 +65,16 @@ Paste it with **`Ctrl+V`** in any editor, browser or text field, or with
 
 > `cc` is different from `c`: `c` copies the *file itself*, `cc` copies
 > the *text inside the file*.
+
+### `cpwd` — copy the current path to the clipboard
+Copies the current working directory (or a given path) to the clipboard
+as plain text. Useful for quickly sharing a path or pasting it in another
+terminal / editor.
+
+```bash
+cpwd              # copies $(pwd)
+cpwd /etc/nginx   # copies the given path
+```
 
 ### `v` — paste files from the clipboard
 Pastes files previously copied with `c` (or from Nautilus) into the

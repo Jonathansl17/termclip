@@ -37,6 +37,20 @@ cc() {
     echo "   $1"
 }
 
+# Copy the current working directory path to the clipboard
+cpwd() {
+    target="${1:-$(pwd)}"
+
+    # Kill previous cpwd.py processes
+    pkill -f "$HOME/bin/cpwd.py" 2>/dev/null
+
+    # Launch new
+    "$HOME/bin/cpwd.py" "$target" >/dev/null 2>&1 & disown
+
+    echo "Path copied to clipboard:"
+    echo "   $target"
+}
+
 # Paste a file from the clipboard into the current directory
 v() {
     output=$("$HOME/bin/v.py" "$@")

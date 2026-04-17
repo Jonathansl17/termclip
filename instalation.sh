@@ -15,6 +15,25 @@ BASHRC="$HOME/.bashrc"
 CONFIG_FILE="bashconfig.txt"
 MARK_START="# === termclip configuration ==="
 MARK_END="# === end termclip ==="
+TERMCLIP_REF="${TERMCLIP_REF:-main}"
+RAW_BASE="https://raw.githubusercontent.com/Jonathansl17/termclip/$TERMCLIP_REF"
+
+# Fetch a repo file into the current directory if it isn't already here.
+# Lets the installer run standalone via `curl | bash` without cloning.
+fetch_if_missing() {
+  local name="$1"
+  if [ ! -f "$name" ]; then
+    echo "Downloading $name from $TERMCLIP_REF..."
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSL "$RAW_BASE/$name" -o "$name"
+    elif command -v wget >/dev/null 2>&1; then
+      wget -q "$RAW_BASE/$name" -O "$name"
+    else
+      echo "Neither curl nor wget available to download $name." >&2
+      exit 1
+    fi
+  fi
+}
 
 echo "Checking dependencies..."
 
@@ -45,6 +64,19 @@ pkill -f "$BIN_DIR/cc.py"   2>/dev/null || true
 pkill -f "$BIN_DIR/cpwd.py" 2>/dev/null || true
 
 # --- Step 3: Copy scripts and create runnable aliases ---
+# If running without a clone (curl | bash), the required files are missing
+# from the current directory. Fall back to a temp workspace and download.
+if [ ! -f "c.py" ] || [ ! -f "cpwd.py" ]; then
+  WORKDIR="$(mktemp -d)"
+  trap 'rm -rf "$WORKDIR"' EXIT
+  echo "Running in standalone mode, using $WORKDIR"
+  cd "$WORKDIR"
+fi
+
+for f in c.py v.py cc.py cpwd.py bashconfig.txt; do
+  fetch_if_missing "$f"
+done
+
 cp -f c.py "$BIN_DIR/"
 cp -f v.py "$BIN_DIR/"
 cp -f cc.py "$BIN_DIR/"

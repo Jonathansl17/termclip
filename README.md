@@ -20,16 +20,21 @@ It lets you **copy and paste files or folders** from the command line — just l
 
 ## 📦 Installation
 
-### Clone the repository
+### One-liner (recommended)
+```bash
+curl -fsSL https://raw.githubusercontent.com/Jonathansl17/termclip/main/instalation.sh | bash
+```
+
+Pin a specific version:
+```bash
+curl -fsSL https://raw.githubusercontent.com/Jonathansl17/termclip/v1.1.1/instalation.sh | TERMCLIP_REF=v1.1.1 bash
+```
+
+### Or clone the repository
 ```bash
 git clone https://github.com/Jonathansl17/termclip
 cd termclip
-
-```
-### Run the installer
-```bash
 ./instalation.sh
-# or: bash instalation.sh
 ```
 
 Running the installer again also works as an **update**: it refreshes the

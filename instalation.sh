@@ -15,7 +15,7 @@ BASHRC="$HOME/.bashrc"
 CONFIG_FILE="bashconfig.txt"
 MARK_START="# === termclip configuration ==="
 MARK_END="# === end termclip ==="
-TERMCLIP_REF="${TERMCLIP_REF:-main}"
+TERMCLIP_REF="${TERMCLIP_REF:-master}"
 RAW_BASE="https://raw.githubusercontent.com/Jonathansl17/termclip/$TERMCLIP_REF"
 
 # Fetch a repo file into the current directory if it isn't already here.

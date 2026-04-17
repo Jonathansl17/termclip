@@ -22,7 +22,7 @@ It lets you **copy and paste files or folders** from the command line — just l
 
 ### One-liner (recommended)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Jonathansl17/termclip/main/instalation.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Jonathansl17/termclip/master/instalation.sh | bash
 ```
 
 Pin a specific version:

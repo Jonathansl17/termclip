@@ -105,9 +105,15 @@ fi
   echo "$MARK_START"
   echo "# Terminal clipboard utilities (c, v, cc)"
   echo "# Added automatically on $(date)"
-  if ! grep -Fq 'export PATH="$HOME/bin:$PATH"' "$BASHRC"; then
-    echo 'export PATH="$HOME/bin:$PATH"'
-  fi
+  # Guarded PATH export: only prepends $HOME/bin if not already present.
+  # Prevents duplicates when this script runs multiple times or when
+  # other configs already added the entry.
+  cat <<'EOF'
+case ":$PATH:" in
+  *":$HOME/bin:"*) ;;
+  *) export PATH="$HOME/bin:$PATH" ;;
+esac
+EOF
   if [ -f "$CONFIG_FILE" ]; then
     cat "$CONFIG_FILE"
   else

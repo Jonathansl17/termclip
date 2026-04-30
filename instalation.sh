@@ -3,8 +3,8 @@
 #  termclip - Installation Script
 #  Author: Jonathansl17
 #  Description:
-#    Installs termclip clipboard utilities (`c` and `v`)
-#    for GNOME/Linux terminals, integrating Bash + Python.
+#    Installs termclip clipboard utilities (`c`, `cc`, `cpwd`, `v`)
+#    as standalone scripts in ~/bin (no bash functions required).
 # =====================================================
 
 set -euo pipefail
@@ -12,14 +12,11 @@ set -euo pipefail
 # --- Configuration ---
 BIN_DIR="$HOME/bin"
 BASHRC="$HOME/.bashrc"
-CONFIG_FILE="bashconfig.txt"
 MARK_START="# === termclip configuration ==="
 MARK_END="# === end termclip ==="
 TERMCLIP_REF="${TERMCLIP_REF:-master}"
 RAW_BASE="https://raw.githubusercontent.com/Jonathansl17/termclip/$TERMCLIP_REF"
 
-# Fetch a repo file into the current directory if it isn't already here.
-# Lets the installer run standalone via `curl | bash` without cloning.
 fetch_if_missing() {
   local name="$1"
   if [ ! -f "$name" ]; then
@@ -63,9 +60,7 @@ pkill -f "$BIN_DIR/c.py"    2>/dev/null || true
 pkill -f "$BIN_DIR/cc.py"   2>/dev/null || true
 pkill -f "$BIN_DIR/cpwd.py" 2>/dev/null || true
 
-# --- Step 3: Copy scripts and create runnable aliases ---
-# If running without a clone (curl | bash), the required files are missing
-# from the current directory. Fall back to a temp workspace and download.
+# --- Step 3: Fetch python backends if missing ---
 if [ ! -f "c.py" ] || [ ! -f "cpwd.py" ]; then
   WORKDIR="$(mktemp -d)"
   trap 'rm -rf "$WORKDIR"' EXIT
@@ -73,69 +68,104 @@ if [ ! -f "c.py" ] || [ ! -f "cpwd.py" ]; then
   cd "$WORKDIR"
 fi
 
-for f in c.py v.py cc.py cpwd.py bashconfig.txt; do
+for f in c.py v.py cc.py cpwd.py; do
   fetch_if_missing "$f"
 done
 
-cp -f c.py "$BIN_DIR/"
-cp -f v.py "$BIN_DIR/"
-cp -f cc.py "$BIN_DIR/"
+cp -f c.py    "$BIN_DIR/"
+cp -f v.py    "$BIN_DIR/"
+cp -f cc.py   "$BIN_DIR/"
 cp -f cpwd.py "$BIN_DIR/"
 chmod u+x "$BIN_DIR/c.py" "$BIN_DIR/v.py" "$BIN_DIR/cc.py" "$BIN_DIR/cpwd.py"
 
-ln -sf "$BIN_DIR/c.py" "$BIN_DIR/c"
-ln -sf "$BIN_DIR/v.py" "$BIN_DIR/v"
-ln -sf "$BIN_DIR/cc.py" "$BIN_DIR/cc"
-ln -sf "$BIN_DIR/cpwd.py" "$BIN_DIR/cpwd"
-chmod u+x "$BIN_DIR/c" "$BIN_DIR/v" "$BIN_DIR/cc" "$BIN_DIR/cpwd"
+# --- Step 4: Remove any old symlinks left from previous installs ---
+for legacy in c v cc cpwd; do
+  if [ -L "$BIN_DIR/$legacy" ]; then
+    rm -f "$BIN_DIR/$legacy"
+  fi
+done
+
+# --- Step 5: Generate wrapper scripts (replace bash functions) ---
+cat > "$BIN_DIR/c" <<'EOF'
+#!/usr/bin/env bash
+if [ $# -lt 1 ]; then
+    echo "Usage: c file1 file2 ..."
+    exit 1
+fi
+pkill -f "$HOME/bin/c.py" 2>/dev/null
+"$HOME/bin/c.py" "$@" >/dev/null 2>&1 & disown
+echo "Files copied to clipboard:"
+for f in "$@"; do
+    echo "   $f"
+done
+EOF
+
+cat > "$BIN_DIR/cc" <<'EOF'
+#!/usr/bin/env bash
+if [ $# -lt 1 ]; then
+    echo "Usage: cc file"
+    exit 1
+fi
+pkill -f "$HOME/bin/cc.py" 2>/dev/null
+"$HOME/bin/cc.py" "$1" >/dev/null 2>&1 & disown
+echo "Content copied to clipboard from:"
+echo "   $1"
+EOF
+
+cat > "$BIN_DIR/cpwd" <<'EOF'
+#!/usr/bin/env bash
+target="${1:-$(pwd)}"
+pkill -f "$HOME/bin/cpwd.py" 2>/dev/null
+"$HOME/bin/cpwd.py" "$target" >/dev/null 2>&1 & disown
+echo "Path copied to clipboard:"
+echo "   $target"
+EOF
+
+cat > "$BIN_DIR/v" <<'EOF'
+#!/usr/bin/env bash
+output=$("$HOME/bin/v.py" "$@")
+if [ $? -ne 0 ]; then
+    echo "No files found in clipboard."
+    exit 1
+fi
+echo "Files pasted from clipboard:"
+for f in $output; do
+    echo "   $f"
+done
+EOF
+
+chmod u+x "$BIN_DIR/c" "$BIN_DIR/cc" "$BIN_DIR/cpwd" "$BIN_DIR/v"
 
 echo "Scripts installed/updated. Commands 'c', 'cc', 'cpwd' and 'v' ready."
 
-# --- Step 4: Add or refresh shell configuration ---
+# --- Step 6: Ensure ~/bin is in PATH (no bash functions appended) ---
 if grep -Fq "$MARK_START" "$BASHRC"; then
-  # Remove the existing termclip block so we can replace it with the latest version
   sed -i "/$MARK_START/,/$MARK_END/d" "$BASHRC"
-  # Drop the trailing blank line left behind, if any
   sed -i -e :a -e '/^$/{$d;N;ba' -e '}' "$BASHRC"
-  echo "Existing termclip configuration removed from $BASHRC (will be refreshed)."
+  echo "Existing termclip block removed from $BASHRC (will be refreshed)."
 fi
 
 {
   echo ""
   echo "$MARK_START"
-  echo "# Terminal clipboard utilities (c, v, cc)"
-  echo "# Added automatically on $(date)"
-  # Guarded PATH export: only prepends $HOME/bin if not already present.
-  # Prevents duplicates when this script runs multiple times or when
-  # other configs already added the entry.
+  echo "# Ensure ~/bin is on PATH so termclip scripts are found."
   cat <<'EOF'
 case ":$PATH:" in
   *":$HOME/bin:"*) ;;
   *) export PATH="$HOME/bin:$PATH" ;;
 esac
 EOF
-  if [ -f "$CONFIG_FILE" ]; then
-    cat "$CONFIG_FILE"
-  else
-    cat <<'EOF'
-# termclip fallback functions
-c()    { command -v c    >/dev/null 2>&1 && c    "$@" || "$HOME/bin/c"    "$@"; }
-v()    { command -v v    >/dev/null 2>&1 && v    "$@" || "$HOME/bin/v";         }
-cc()   { command -v cc   >/dev/null 2>&1 && cc   "$@" || "$HOME/bin/cc"   "$@"; }
-cpwd() { command -v cpwd >/dev/null 2>&1 && cpwd "$@" || "$HOME/bin/cpwd" "$@"; }
-EOF
-  fi
   echo "$MARK_END"
 } >> "$BASHRC"
-echo "termclip configuration written to $BASHRC."
+echo "PATH guard written to $BASHRC."
 
 # --- Final message ---
 echo ""
 echo "termclip installation complete!"
-echo "You can now use the following commands:"
-echo "  c file1 file2 ...   → Copy files or folders to the clipboard"
-echo "  cc file             → Copy the text content of a file to the clipboard"
-echo "  cpwd [path]         → Copy the current (or given) path to the clipboard"
-echo "  v                   → Paste files from the clipboard"
+echo "Commands available:"
+echo "  c file1 file2 ...   → Copy files or folders to clipboard"
+echo "  cc file             → Copy text content of a file to clipboard"
+echo "  cpwd [path]         → Copy current (or given) path to clipboard"
+echo "  v                   → Paste files from clipboard"
 echo ""
 echo "Open a new terminal or run: source ~/.bashrc"

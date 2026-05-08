@@ -51,8 +51,9 @@ else
   echo "PyQt5 already installed."
 fi
 
-# --- Step 1: Ensure ~/bin exists ---
+# --- Step 1: Ensure ~/bin exists and ~/.bashrc is present ---
 mkdir -p "$BIN_DIR"
+touch "$BASHRC"
 echo "Directory $BIN_DIR ready."
 
 # --- Step 2: Stop any previous instances so updates take effect ---
@@ -60,8 +61,13 @@ pkill -f "$BIN_DIR/c.py"    2>/dev/null || true
 pkill -f "$BIN_DIR/cc.py"   2>/dev/null || true
 pkill -f "$BIN_DIR/cpwd.py" 2>/dev/null || true
 
-# --- Step 3: Fetch python backends if missing ---
-if [ ! -f "c.py" ] || [ ! -f "cpwd.py" ]; then
+# --- Step 3: Fetch python backends if any are missing ---
+missing=0
+for f in c.py v.py cc.py cpwd.py; do
+  [ -f "$f" ] || { missing=1; break; }
+done
+
+if [ "$missing" -eq 1 ]; then
   WORKDIR="$(mktemp -d)"
   trap 'rm -rf "$WORKDIR"' EXIT
   echo "Running in standalone mode, using $WORKDIR"

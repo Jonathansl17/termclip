@@ -1,24 +1,28 @@
-# termclip 🧷  
-**Terminal Clipboard Utilities for GNOME/Linux**
+# termclip
 
-`termclip` is a lightweight set of Bash + Python utilities that bring GNOME clipboard integration directly to your terminal.  
-It lets you **copy and paste files or folders** from the command line — just like you would in your file manager.
+**Terminal Clipboard Utilities for Linux**
 
----
-
-## 🚀 Features
-
-- 🧩 Copy files or folders to the system clipboard (`c`)
-- 📝 Copy the text content of a file to the clipboard (`cc`)
-- 📍 Copy the current working directory path to the clipboard (`cpwd`)
-- 📎 Paste files from the clipboard into the current directory (`v`)
-- 🐧 100% compatible with GNOME / Nautilus
-- 💻 Works entirely from the terminal (no GUI required)
-- ⚙️ Built with **Bash + PyQt5**
+`termclip` is a lightweight set of Bash + Python utilities that bring desktop
+clipboard integration directly to your terminal. It lets you **copy and paste
+files or folders** from the command line — just like you would in your file
+manager.
 
 ---
 
-## 📦 Installation
+## Features
+
+- Copy files or folders to the system clipboard (`c`)
+- Copy the text content of a file to the clipboard (`cc`)
+- Copy the current working directory path to the clipboard (`cpwd`)
+- Paste files from the clipboard into the current directory (`v`)
+- Compatible with GNOME / Nautilus and other Linux desktops that honor the
+  `x-special/gnome-copied-files` clipboard format
+- Works entirely from the terminal (no GUI required)
+- Built with Bash + PyQt5
+
+---
+
+## Installation
 
 ### One-liner (recommended)
 ```bash
@@ -27,7 +31,7 @@ curl -fsSL https://raw.githubusercontent.com/Jonathansl17/termclip/master/instal
 
 Pin a specific version:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Jonathansl17/termclip/v1.1.1/instalation.sh | TERMCLIP_REF=v1.1.1 bash
+curl -fsSL https://raw.githubusercontent.com/Jonathansl17/termclip/v1.1.2/instalation.sh | TERMCLIP_REF=v1.1.2 bash
 ```
 
 ### Or clone the repository
@@ -37,13 +41,23 @@ cd termclip
 ./instalation.sh
 ```
 
-Running the installer again also works as an **update**: it refreshes the
-scripts in `~/bin`, stops any running instances and rewrites the termclip
-block in your `~/.bashrc`.
+### Updating
+
+Running the installer again works as an **update**. It will:
+
+- refresh the scripts in `~/bin`,
+- stop any running clipboard-owner processes,
+- and rewrite the termclip block in your `~/.bashrc`.
+
+Just re-run the same one-liner whenever you want the latest version:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Jonathansl17/termclip/master/instalation.sh | bash
+```
 
 ---
 
-## 🧪 Usage
+## Usage
 
 ### `c` — copy files/folders to the clipboard
 Copies one or more files/folders to the system clipboard **as files**,

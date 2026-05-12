@@ -3,17 +3,16 @@
 #  termclip - Installation Script
 #  Author: Jonathansl17
 #  Description:
-#    Installs termclip clipboard utilities (`c`, `cc`, `cpwd`, `v`)
-#    as standalone scripts in ~/bin (no bash functions required).
+#    Copies termclip clipboard utilities (`c`, `cc`, `cpwd`, `v`)
+#    into ~/bin. Does NOT touch ~/.bashrc or PATH — make sure
+#    ~/bin is already on your PATH (most distros do this via
+#    ~/.profile / ~/.bash_profile; on Arch, `arch-config/bash/bash_profile`
+#    handles it).
 # =====================================================
 
 set -euo pipefail
 
-# --- Configuration ---
 BIN_DIR="$HOME/bin"
-BASHRC="$HOME/.bashrc"
-MARK_START="# === termclip configuration ==="
-MARK_END="# === end termclip ==="
 TERMCLIP_REF="${TERMCLIP_REF:-master}"
 RAW_BASE="https://raw.githubusercontent.com/Jonathansl17/termclip/$TERMCLIP_REF"
 
@@ -32,36 +31,10 @@ fetch_if_missing() {
   fi
 }
 
-echo "Checking dependencies..."
-
-# --- Step 0: Check & install dependencies ---
-if ! python3 -c "import PyQt5" >/dev/null 2>&1; then
-  echo "PyQt5 not found. Installing..."
-  if command -v apt >/dev/null 2>&1; then
-    sudo apt update -y
-    sudo apt install -y python3-pyqt5
-  elif command -v dnf >/dev/null 2>&1; then
-    sudo dnf install -y python3-qt5
-  elif command -v pacman >/dev/null 2>&1; then
-    sudo pacman -Sy --noconfirm python-pyqt5
-  else
-    echo "Could not detect a supported package manager. Please install PyQt5 manually." >&2
-  fi
-else
-  echo "PyQt5 already installed."
-fi
-
-# --- Step 1: Ensure ~/bin exists and ~/.bashrc is present ---
+# --- Step 1: Ensure ~/bin exists ---
 mkdir -p "$BIN_DIR"
-touch "$BASHRC"
-echo "Directory $BIN_DIR ready."
 
-# --- Step 2: Stop any previous instances so updates take effect ---
-pkill -f "$BIN_DIR/c.py"    2>/dev/null || true
-pkill -f "$BIN_DIR/cc.py"   2>/dev/null || true
-pkill -f "$BIN_DIR/cpwd.py" 2>/dev/null || true
-
-# --- Step 3: Fetch python backends if any are missing ---
+# --- Step 2: Fetch python backends if running standalone (curl|bash mode) ---
 missing=0
 for f in c.py v.py cc.py cpwd.py; do
   [ -f "$f" ] || { missing=1; break; }
@@ -70,28 +43,17 @@ done
 if [ "$missing" -eq 1 ]; then
   WORKDIR="$(mktemp -d)"
   trap 'rm -rf "$WORKDIR"' EXIT
-  echo "Running in standalone mode, using $WORKDIR"
+  echo "Standalone mode — fetching backends into $WORKDIR"
   cd "$WORKDIR"
+  for f in c.py v.py cc.py cpwd.py; do
+    fetch_if_missing "$f"
+  done
 fi
 
-for f in c.py v.py cc.py cpwd.py; do
-  fetch_if_missing "$f"
-done
+# --- Step 3: Copy backends + write wrappers ---
+cp -f c.py cc.py cpwd.py v.py "$BIN_DIR/"
+chmod u+x "$BIN_DIR/c.py" "$BIN_DIR/cc.py" "$BIN_DIR/cpwd.py" "$BIN_DIR/v.py"
 
-cp -f c.py    "$BIN_DIR/"
-cp -f v.py    "$BIN_DIR/"
-cp -f cc.py   "$BIN_DIR/"
-cp -f cpwd.py "$BIN_DIR/"
-chmod u+x "$BIN_DIR/c.py" "$BIN_DIR/v.py" "$BIN_DIR/cc.py" "$BIN_DIR/cpwd.py"
-
-# --- Step 4: Remove any old symlinks left from previous installs ---
-for legacy in c v cc cpwd; do
-  if [ -L "$BIN_DIR/$legacy" ]; then
-    rm -f "$BIN_DIR/$legacy"
-  fi
-done
-
-# --- Step 5: Generate wrapper scripts (replace bash functions) ---
 cat > "$BIN_DIR/c" <<'EOF'
 #!/usr/bin/env bash
 if [ $# -lt 1 ]; then
@@ -142,36 +104,6 @@ EOF
 
 chmod u+x "$BIN_DIR/c" "$BIN_DIR/cc" "$BIN_DIR/cpwd" "$BIN_DIR/v"
 
-echo "Scripts installed/updated. Commands 'c', 'cc', 'cpwd' and 'v' ready."
-
-# --- Step 6: Ensure ~/bin is in PATH (no bash functions appended) ---
-if grep -Fq "$MARK_START" "$BASHRC"; then
-  sed -i "/$MARK_START/,/$MARK_END/d" "$BASHRC"
-  sed -i -e :a -e '/^$/{$d;N;ba' -e '}' "$BASHRC"
-  echo "Existing termclip block removed from $BASHRC (will be refreshed)."
-fi
-
-{
-  echo ""
-  echo "$MARK_START"
-  echo "# Ensure ~/bin is on PATH so termclip scripts are found."
-  cat <<'EOF'
-case ":$PATH:" in
-  *":$HOME/bin:"*) ;;
-  *) export PATH="$HOME/bin:$PATH" ;;
-esac
-EOF
-  echo "$MARK_END"
-} >> "$BASHRC"
-echo "PATH guard written to $BASHRC."
-
-# --- Final message ---
-echo ""
-echo "termclip installation complete!"
-echo "Commands available:"
-echo "  c file1 file2 ...   → Copy files or folders to clipboard"
-echo "  cc file             → Copy text content of a file to clipboard"
-echo "  cpwd [path]         → Copy current (or given) path to clipboard"
-echo "  v                   → Paste files from clipboard"
-echo ""
-echo "Open a new terminal or run: source ~/.bashrc"
+echo "termclip installed to $BIN_DIR"
+echo "Make sure $BIN_DIR is on your PATH."
+echo "Requires python3 + PyQt5 (install via your package manager if missing)."
